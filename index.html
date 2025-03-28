@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>电梯模拟动画系统</title>
+    <style>
+        /* 标题样式 */
+        .title {
+            text-align: center;
+            font-size: 48px;
+            color: #2c3e50;
+            margin: 20px 0 40px;
+            text-shadow: 3px 3px 0 #f1c40f,
+                        -1px -1px 0 #f1c40f,
+                        1px -1px 0 #f1c40f,
+                        -1px 1px 0 #f1c40f;
+            animation: titleGlow 2s ease-in-out infinite;
+            letter-spacing: 4px;
+            font-family: 'Arial Black', sans-serif;
+            position: relative;
+        }
+
+        @keyframes titleGlow {
+            0%, 100% { text-shadow: 0 0 20px #f1c40f; }
+            50% { text-shadow: 0 0 30px #f1c40f, 0 0 50px #f1c40f; }
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #f0f0f0 0%, #dfe6e9 100%);
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        #elevator-system {
+            width: 800px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .floor-labels {
+            width: 130px;
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .floor-label {
+            width: 120px;
+            padding: 12px 15px;
+            background: #2c3e50;
+            color: #ecf0f1;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            border: 2px solid #3498db;
+            box-shadow: 3px 3px 10px rgba(0,0,0,0.3);
+            white-space: nowrap;
+        }
+
+        #shaft {
+            background: #444;
+            height: 500px;
+            width: 200px;
+            border-left: 3px solid #666;
+            border-right: 3px solid #666;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #elevator-car {
+            background: #888;
+            height: 95px;
+            width: 180px;
+            position: absolute;
+            bottom: 0;
+            left: 10px;
+            transition: transform 1s linear;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        }
+
+        .door {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .door::before,
+        .door::after {
+            content: '';
+            position: absolute;
+            width: 50%;
+            height: 100%;
+            background: #999;
+            transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .door::before {
+            left: 0;
+            transform: translateX(0);
+        }
+
+        .door::after {
+            right: 0;
+            transform: translateX(0);
+        }
+
+        .door.open::before {
+            transform: translateX(-100%);
+        }
+
+        .door.open::after {
+            transform: translateX(100%);
+        }
+
+        #controls {
+            width: 230px;
+            background: #666;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        #display {
+            background: #000;
+            color: #2ecc71;
+            padding: 18px;
+            margin-bottom: 25px;
+            text-align: center;
+            font-size: 40px;
+            border-radius: 10px;
+            position: relative;
+            font-family: 'Digital-7', monospace;
+        }
+
+        .direction {
+            position: absolute;
+            font-size: 28px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            color: #f1c40f;
+            text-shadow: 0 0 10px #f1c40f;
+        }
+
+        #up-arrow { 
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        #down-arrow {
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .active-direction {
+            opacity: 1 !important;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0.3; }
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+        }
+
+        button {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            border: none;
+            background: #fff;
+            font-size: 22px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+        }
+
+        button.active {
+            background: #2ecc71 !important;
+            box-shadow: 0 0 25px #2ecc71;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <h1 class="title">电梯运行模拟动画</h1>
+
+    <div id="elevator-system">
+        <div class="floor-labels">
+            <div class="floor-label">5楼｜5F</div>
+            <div class="floor-label">4楼｜4F</div>
+            <div class="floor-label">3楼｜3F</div>
+            <div class="floor-label">2楼｜2F</div>
+            <div class="floor-label">1楼｜1F</div>
+        </div>
+
+        <div id="shaft">
+            <div id="elevator-car">
+                <div class="door"></div>
+            </div>
+        </div>
+
+        <div id="controls">
+            <div id="display">
+                <span id="up-arrow" class="direction">▲</span>
+                <span>1</span>
+                <span id="down-arrow" class="direction">▼</span>
+            </div>
+            <div class="buttons">
+                <button onclick="callElevator(1)">1</button>
+                <button onclick="callElevator(2)">2</button>
+                <button onclick="callElevator(3)">3</button>
+                <button onclick="callElevator(4)">4</button>
+                <button onclick="callElevator(5)">5</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentFloor = 1;
+        let isMoving = false;
+        const floorHeight = 100;
+        const car = document.getElementById('elevator-car');
+        const display = document.getElementById('display');
+        const door = document.querySelector('.door');
+
+        function callElevator(targetFloor) {
+            if (isMoving || targetFloor === currentFloor) return;
+
+            isMoving = true;
+            const buttons = document.querySelectorAll('button');
+            buttons[targetFloor-1].classList.add('active');
+            
+            const direction = targetFloor > currentFloor ? 'up' : 'down';
+            showDirection(direction);
+
+            const moveDistance = (targetFloor - 1) * floorHeight;
+            car.style.transform = `translateY(-${moveDistance}px)`;
+            
+            const travelTime = Math.abs(targetFloor - currentFloor) * 1000;
+
+            setTimeout(() => {
+                currentFloor = targetFloor;
+                display.children[1].textContent = currentFloor;
+                hideDirection();
+                
+                door.classList.add('open');
+                setTimeout(() => {
+                    door.classList.remove('open');
+                    isMoving = false;
+                    buttons[targetFloor-1].classList.remove('active');
+                }, 2000);
+            }, travelTime);
+        }
+
+        function showDirection(dir) {
+            const upArrow = document.getElementById('up-arrow');
+            const downArrow = document.getElementById('down-arrow');
+            if (dir === 'up') {
+                upArrow.classList.add('active-direction');
+                downArrow.classList.remove('active-direction');
+            } else {
+                downArrow.classList.add('active-direction');
+                upArrow.classList.remove('active-direction');
+            }
+        }
+
+        function hideDirection() {
+            document.querySelectorAll('.direction').forEach(arrow => {
+                arrow.classList.remove('active-direction');
+            });
+        }
+    </script>
+</body>
+</html>
